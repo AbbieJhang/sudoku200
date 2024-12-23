@@ -3,6 +3,7 @@
 
 using namespace std;
 
+
 int board[4][4] = {
     {0, 0, 1, 0},
     {0, 4, 0, 0},
@@ -135,7 +136,7 @@ void print_board()
             // Print the cell out in styled text.
             // If the content is 0, print a dot, else print the number.
             if (board[i][j] == 0)
-                cout << get_styled_text(" ¡P ", style);
+                cout << get_styled_text(" Â¡P ", style);
             else
                 cout << get_styled_text(" " + to_string(board[i][j]) + " ", style);
 
