@@ -1,0 +1,364 @@
+#include <iostream>
+#include <windows.h>
+
+using namespace std;
+
+int board[4][4] = {
+    {0, 0, 1, 0},
+    {0, 4, 0, 0},
+    {0, 0, 2, 0},
+    {0, 1, 0, 0},
+};
+
+bool editable[4][4]={
+	{true, true, false, true},  // (0,2) 是原本不可編輯的
+    {true, false, true, true},  // (1,1) 是原本不可編輯的
+    {true, true, false, true},  // (2,2) 是原本不可編輯的
+    {true, false, true, true},  // (3,1) 是原本不可編輯的
+};
+
+int cur_r = 0, cur_c = 0;
+
+void check_horizontal(int r)
+{
+    /* TODO: Check if a horizontal line has conflict number, or is finished. */
+    bool seen[5] = {false};  // 用於檢查數字1到4，索引值0不使用(這邊的01234是填入的數字，所以五格 
+    for (int c = 0; c < 4; ++c) {
+        if (board[r][c] != 0) {
+            if (seen[board[r][c]]) {
+                // 如果有重復數字，標記為無效
+                editable[r][c] = false;
+            }
+			else {
+                seen[board[r][c]] = true;
+            }
+        }
+    }
+}
+
+void check_vertical(int c)
+{
+    /* TODO: Check if a vertical line has conflict number, or is finished. */
+    bool seen[5] = {false};
+    for (int r = 0; r < 4; ++r) {
+        if (board[r][c] != 0) {
+            if (seen[board[r][c]]) {
+                // 如果有重復數字，標記為無效
+                editable[r][c] = false;
+            }
+			else {
+                seen[board[r][c]] = true;
+            }
+        }
+    }
+}
+
+void check_block(int r, int c)
+{
+    /* TODO: Check if a block has conflict number, or is finished. */
+    // 假設方塊的大小是2x2，我們將棋盤分為4個2x2方塊 
+    // 塊1: (0,0), (0,1), (1,0), (1,1)
+    // 塊2: (0,2), (0,3), (1,2), (1,3)
+    // 塊3: (2,0), (2,1), (3,0), (3,1)
+    // 塊4: (2,2), (2,3), (3,2), (3,3)
+
+    bool seen[5] = {false};
+    int block_row_start = (r / 2) * 2;  // 獲取方塊的起始行
+    int block_col_start = (c / 2) * 2;  // 獲取方塊的起始列
+
+    for (int i = block_row_start; i < block_row_start + 2; ++i) {
+        for (int j = block_col_start; j < block_col_start + 2; ++j) {
+            if (board[i][j] != 0) {
+                if (seen[board[i][j]]) {
+                    // 如果有重复數字，標記無效
+                    editable[i][j] = false;
+                }
+				else {
+                    seen[board[i][j]] = true;
+                }
+            }
+        }
+    }
+}
+
+void fill_number()
+{
+    /* TODO: Fill a number in to the cell the cursor is now pointing to.
+             After fill in the number, check the horizontal line, the
+             vertical line and the block the cell is in.
+     */
+ int num;
+    
+    cin >> num;//輸入數字
+   
+    if (num >= 1 && num <= 4){//確定輸入在執行範圍
+        board[cur_r][cur_c] = num;//將數字填入該格陣列格子
+    }
+    else if(num==0){
+    	board[cur_r][cur_c] = 0;
+	}
+	else {
+        cout << "Invalid number" << endl;//如果輸入不在範圍內，告知使用者重新輸入範圍內的數字
+    }
+}
+
+
+void move_cursor(char c)
+{
+    /* TODO: Move the cursor up, down, to the left or to the right.
+             Remember to check if the cursor is moving out of bound.
+    */
+    if(c=='W'||c=='w'){//W 或 w 表示上移
+    	if (cur_r > 0) {//檢查光標是否在第一行以下
+    	for (int i = cur_r - 1; i >= 0; --i) { // 從當前橫排上方逐格檢查(因w往上) 
+            if (board[i][cur_c] == 0||editable[i][cur_c]) { // 如果找到可填寫的格子
+                cur_r = i; // 更新光標的位置
+                return; // 結束函數，光標完成移動
+		}
+	}
+	}
+} 
+	else if(c=='S'||c=='s'){//S 或 s 表示下移
+		for (int i = cur_r + 1; i < 4; ++i) {
+            if (board[i][cur_c] == 0||editable[i][cur_c]) { // 如果找到可填寫的格子
+                cur_r = i; // 更新光標位置
+                return;
+            }
+        }
+	}
+	else if(c=='A'||c=='a'){//A 或 a 表示左移
+		for (int i = cur_c - 1; i >= 0; --i) {
+            if (board[cur_r][i] == 0||editable[cur_r][i]) { // 如果找到可填寫的格子
+                cur_c = i; // 更新光標位置
+                return;
+            }
+        }
+	}
+	else if(c=='D'||c=='d'){//D 或 d 表示右移
+		for (int i = cur_c + 1; i < 4; ++i) {
+            if (board[cur_r][i] == 0||editable[cur_r][i]) { // 如果找到可填寫的格子
+                cur_c = i; // 更新光標位置
+                return;
+            }
+        }
+    }
+	}
+bool is_invalid(int i, int j)
+{
+    /* TODO: Check if board[i][j] is in a line that has conflict numbers. */
+    
+    int value = board[i][j];
+    if (value == 0) return false;  // 空格無需檢查
+
+    // 檢查行（row）
+    for (int c = 0; c < 4; ++c) {
+        if (c != j && board[i][c] == value) return true;  // 發現重複數字
+    }
+
+    // 檢查列（column）
+    for (int r = 0; r < 4; ++r) {
+        if (r != i && board[r][j] == value) return true;  // 發現重複數字
+    }
+
+    // 檢查區塊（block）
+    int block_row_start = (i / 2) * 2;  // 所屬區塊的起始行
+    int block_col_start = (j / 2) * 2;  // 所屬區塊的起始列
+    for (int r = block_row_start; r < block_row_start + 2; ++r) {
+        for (int c = block_col_start; c < block_col_start + 2; ++c) {
+            if ((r != i || c != j) && board[r][c] == value) return true;  // 發現重複數字
+        }
+    }
+
+    return false;  // 無重複數字
+}
+
+bool is_done(int i, int j)
+{
+    /* TODO: Check if board[i][j] is in a line that has finished. */
+     bool seen_row[5] = {false};
+    for (int c = 0; c < 4; ++c) {
+        if (board[i][c] == 0) return false;  // 行未填滿
+        if (seen_row[board[i][c]]) return false;  // 行有重複數字
+        seen_row[board[i][c]] = true;
+    }
+
+    // 檢查列（column）
+    bool seen_col[5] = {false};
+    for (int r = 0; r < 4; ++r) {
+        if (board[r][j] == 0) return false;  // 列未填滿
+        if (seen_col[board[r][j]]) return false;  // 列有重複數字
+        seen_col[board[r][j]] = true;
+    }
+
+    // 檢查區塊（block）
+    bool seen_block[5] = {false};
+    int block_row_start = (i / 2) * 2;
+    int block_col_start = (j / 2) * 2;
+    for (int r = block_row_start; r < block_row_start + 2; ++r) {
+        for (int c = block_col_start; c < block_col_start + 2; ++c) {
+            if (board[r][c] == 0) return false;  // 區塊未填滿
+            if (seen_block[board[r][c]]) return false;  // 區塊有重複數字
+            seen_block[board[r][c]] = true;
+        }
+    }
+
+    return true;  // 所在行、列和區塊都已完成
+}
+
+bool check_win()
+{
+    /* TODO: Check if the game is set. That is, every cell is finished. */
+    for (int i = 0; i < 4; ++i)
+    {
+        for (int j = 0; j < 4; ++j)
+        {
+            if (board[i][j] == 0 || is_invalid(i, j))
+                return false; // 存在空單元格或衝突
+        }
+    }
+    return true;
+
+}
+
+bool is_moving_action(char c)
+{
+    return (c == 'W' || c == 'w' || c == 'S' || c == 's' ||
+            c == 'A' || c == 'a' || c == 'D' || c == 'd');
+}
+
+bool is_filling_action(char c)
+{
+    return (c >= '0' && c <= '4');
+}
+
+string get_styled_text(string text, string style)
+{
+    string color = "", font = "";
+    for (char c : style)
+    {
+        if (c == 'R')
+            color = "31";
+        if (c == 'G')
+            color = "32";
+        if (c == 'E')
+            color = "41";
+        if (c == 'C')
+            color = "106";
+        if (c == 'B')
+            font = ";1";
+    }
+    return "\x1b[" + color + font + "m" + text + "\x1b[0m";
+}
+
+void print_board()
+{
+    // Flush the screen
+    cout << "\x1b[2J\x1b[1;1H";
+
+    // Print usage hint.
+    cout << get_styled_text("W/A/S/D: ", "B") << "move cursor" << endl;
+    cout << get_styled_text("    1-4: ", "B") << "fill in number" << endl;
+    cout << get_styled_text("      0: ", "B") << "clear the cell" << endl;
+    cout << get_styled_text("      Q: ", "B") << "quit" << endl;
+    cout << endl;
+
+    // Iterate through and print each cell.
+    for (int i = 0; i < 4; ++i)
+    {
+        // Print horizontal divider.
+        if (i && i % 2 == 0)
+            cout << "---------------" << endl;
+
+        // Print the first vertical divider in each line.
+        cout << "|";
+        for (int j = 0; j < 4; ++j)
+        {
+            // Set text style based on the state of the cell.
+            string style = "";
+
+            // Set style for the cell the cursor pointing to.
+            if (cur_r == i && cur_c == j)
+                style = "C";
+            // Set style for the cell in an invalid line.
+            else if (is_invalid(i, j))
+                style = "E";
+            // Set style for the cell in a finished line.
+            else if (is_done(i, j))
+                style = "G";
+
+            // Set style for a the cell that is immutable.
+            if (!editable[i][j])
+                style += "B";
+
+            // Print the cell out in styled text.
+            // If the content is 0, print a dot, else print the number.
+            if (board[i][j] == 0)
+                cout << get_styled_text(" · ", style);
+            else
+                cout << get_styled_text(" " + to_string(board[i][j]) + " ", style);
+
+            // Print the vertical divider for each block.
+            if ((j + 1) % 2 == 0)
+                cout << "|";
+        }
+        cout << endl;
+    }
+}
+
+void initialize()
+{
+    // Set up styled text for Windows.
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(hOut, dwMode);
+
+    // Mark editable cells
+    for (int i = 0; i < 4; ++i)
+        for (int j = 0; j < 4; ++j)
+            editable[i][j] = !board[i][j];
+
+    // Print the initial board out.
+    print_board();
+}
+
+int main()
+{
+    char c;
+    bool action_ok;
+
+    initialize();
+    while (cin >> c)
+    {
+        action_ok = false;
+        if (is_moving_action(c))
+        {
+            action_ok = true;
+            move_cursor(c);
+        }
+
+        if (is_filling_action(c))
+        {
+            action_ok = true;
+            cout << "Enter a number 1-4 : "; 
+            fill_number();
+        }
+
+        if (c == 'Q' || c == 'q')
+            break;
+
+        print_board();
+
+        if (check_win())
+        {
+            cout << "YOU WIN!" << endl;
+            break;
+        }
+
+        if (!action_ok)
+            cout << get_styled_text("!!! Invalid action !!!", "R");
+    }
+
+    return 0;
+}
