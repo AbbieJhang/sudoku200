@@ -1,0 +1,317 @@
+#include <iostream>
+#include <windows.h>
+using namespace std;
+
+int board[4][4] = {
+    {0, 0, 1, 0},
+    {0, 4, 0, 0},
+    {0, 0, 2, 0},
+    {0, 1, 0, 0},
+};
+
+bool editable[4][4];
+
+int cur_r = 0, cur_c = 0;
+bool invalid_cells [4][4]={false};
+bool done_cells [4][4]={false};
+void check_horizontal()
+{ 
+    for (int i = 0; i < 4; ++i)
+    {
+        int count[5] = {0};  // 記錄每個數字出現的次數，例如該列有1 2 2 3 →{0,1,2,1,0,} 
+        for (int j = 0; j < 4; ++j)
+        {
+            int num = board[i][j];
+            if (num != 0)
+                count[num]++; //計算出現幾次 
+        }
+        for (int j = 0; j < 4; ++j)
+        {
+            int num = board[i][j];
+            if (count[num] > 1)
+            for(int k=0;k<4;++k){
+            	invalid_cells[i][k] = true;// 如果有數字重複，將整row設置為紅色
+			}
+            if (count[1] ==1&&count[2]==1&&count[3]==1&&count[4]==1)
+            for(int k=0;k<4;++k){
+            	done_cells[i][k] = true;// 如果有數字除了零皆出現一次，將整row設置為綠色
+			}
+                
+        }
+    } 
+}
+
+    
+
+
+void check_vertical()
+{
+    for (int j = 0; j < 4; ++j)
+    {
+        int count[5] = {0};  
+        for (int i = 0; i < 4; ++i)
+        {
+            int num = board[i][j];
+            if (num != 0)
+                count[num]++; 
+        }
+
+        for (int i = 0; i < 4; ++i)
+        {
+            int num = board[i][j];
+            if (count[num] > 1)
+            for(int k=0;k<4;++k){
+            	invalid_cells[k][j] = true; // 如果有數字重複，將整column設置為紅色
+			}
+        if (count[1] ==1&&count[2]==1&&count[3]==1&&count[4]==1)
+            for(int k=0;k<4;++k){
+            	done_cells[k][j] = true;// 如果數字除了零皆出現一次，將整column設置為綠色
+			}   
+        }
+    }
+}
+
+void check_block()
+{     for (int block_r = 0; block_r < 4; block_r += 2) { //block_r=0,2
+        for (int block_c = 0; block_c < 4; block_c += 2) { //block_c=0,2
+            int count[5] = {0};  
+
+            for (int i = block_r; i < block_r + 2; ++i) { // 0=<i<2 or 2<=i<4 
+                for (int j = block_c; j < block_c + 2; ++j) {  // 0=<j<2 or 2<=j<4 
+                    int num = board[i][j];   
+                    if (num != 0) {         
+                        count[num]++;
+                    }
+                }
+            }
+            for (int i = block_r; i < block_r + 2; ++i) {      //
+                for (int j = block_c; j < block_c + 2; ++j) {  //
+                    int num = board[i][j];  
+                    if (num != 0 && count[num] > 1) { 
+                    
+                       for(int k=block_r;k<block_r+2;++k){ //0<=k<2 or 2<=k<4
+                       	for(int l=block_c;l<block_c+2;++l){ //0<=l<2 or 2<=l<4  
+                       		invalid_cells[k][l] = true; 
+						   }
+						   }
+                       	
+					   }
+					if (count[1] ==1&&count[2]==1&&count[3]==1&&count[4]==1){
+                       	   for(int k=block_r;k<block_r+2;++k){ //0<=k<2 or 2<=k<4
+                       	for(int l=block_c;l<block_c+2;++l){ //0<=l<2 or 2<=l<4  
+                       		done_cells[k][l] = true; 
+						   }
+						   }
+					    
+                    }
+                }
+            }
+        }
+    }
+    
+}
+
+void fill_number(char c)
+{
+    int num = c - 48;  
+
+    if (editable[cur_r][cur_c]) //輸入數字必被固定住 
+    {
+    if (num >= 0 && num < 5){
+        board[cur_r][cur_c] = num;
+        editable[0][2]=false;
+		editable[1][1]=false; 
+		editable[2][2]=false;
+		editable[3][1]=false;
+        }
+        
+    }
+    check_horizontal();
+    check_vertical();
+    check_block();
+}
+void move_cursor(char c)
+{
+    if((c=='W'||c=='w')&&cur_r>0){
+    	cur_r-=1;
+	}
+	if((c=='S'||c=='s')&&cur_r<3){
+    	cur_r+=1;
+	}
+    if((c=='A'||c=='a')&&cur_c>0){
+    	cur_c+=-1;
+	}
+    if((c=='D'||c=='d')&&cur_c<3){
+    	cur_c+=+1;
+	}
+	
+}
+
+bool is_invalid(int i, int j)
+{
+    /* TODO: Check if board[i][j] is in a line that has conflict numbers. */
+    return invalid_cells[i][j]; //回傳該位置是否無效 
+    return false;
+}
+
+bool is_done(int i, int j)
+{
+    /* TODO: Check if board[i][j] is in a line that has finished. */
+    return done_cells[i][j];
+    return false;
+}
+
+bool check_win()
+{
+    
+       for (int i = 0; i < 4; ++i)
+        for (int j = 0; j < 4; ++j)
+            if (board[i][j] == 0 || is_invalid(i, j)) //有空格或有錯 
+                return false;
+    return true;
+}
+
+bool is_moving_action(char c)
+{
+    return (c == 'W' || c == 'w' || c == 'S' || c == 's' ||
+            c == 'A' || c == 'a' || c == 'D' || c == 'd');
+}
+
+bool is_filling_action(char c)
+{
+    return (c >= '0' && c <= '4');
+}
+
+string get_styled_text(string text, string style)
+{
+    string color = "", font = "";
+    for (char c : style)
+    {
+        if (c == 'R')
+            color = "31";
+        if (c == 'G')
+            color = "32";
+        if (c == 'E')
+            color = "41";
+        if (c == 'C')
+            color = "106";
+        if (c == 'B')
+            font = ";1";
+    }
+    return "\x1b[" + color + font + "m" + text + "\x1b[0m";
+}
+
+void print_board()
+{
+    // Flush the screen
+    cout << "\x1b[2J\x1b[1;1H";
+
+    // Print usage hint.
+    cout << get_styled_text("W/A/S/D: ", "B") << "move cursor" << endl;
+    cout << get_styled_text("    1-4: ", "B") << "fill in number" << endl;
+    cout << get_styled_text("      0: ", "B") << "clear the cell" << endl;
+    cout << get_styled_text("      Q: ", "B") << "quit" << endl;
+    cout << get_styled_text("      6: ", "B") << "check answer" << endl;
+    cout << endl;
+
+    // Iterate through and print each cell.
+    for (int i = 0; i < 4; ++i)
+    {
+        // Print horizontal divider.
+        if (i && i % 2 == 0)
+            cout << "---------------" << endl;
+
+        // Print the first vertical divider in each line.
+        cout << "|";
+        for (int j = 0; j < 4; ++j)
+        {
+            // Set text style based on the state of the cell.
+            string style = "";
+
+            // Set style for the cell the cursor pointing to.
+            if (cur_r == i && cur_c == j)
+                style = "C";
+            // Set style for the cell in an invalid line.
+            else if (is_invalid(i, j))
+                style = "E";
+            // Set style for the cell in a finished line.
+            else if (is_done(i, j))
+                style = "G";
+
+            // Set style for a the cell that is immutable.
+            if (!editable[i][j])
+                style += "B";
+
+            // Print the cell out in styled text.
+            // If the content is 0, print a dot, else print the number.
+            if (board[i][j] == 0)
+                cout << get_styled_text(" · ", style);
+            else
+                cout << get_styled_text(" " + to_string(board[i][j]) + " ", style);
+
+            // Print the vertical divider for each block.
+            if ((j + 1) % 2 == 0)
+                cout << "|";
+        }
+        cout << endl;
+    }
+}
+
+void initialize()
+{
+    // Set up styled text for Windows.
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(hOut, dwMode);
+
+    // Mark editable cells
+    for (int i = 0; i < 4; ++i)
+        for (int j = 0; j < 4; ++j)
+            editable[i][j] = !board[i][j];
+
+    // Print the initial board out.
+    print_board();
+}
+
+int main()
+{
+    char c;
+    bool action_ok;
+
+    initialize();
+    while (cin >> c)
+    {
+        action_ok = false;
+        if (is_moving_action(c))
+        {
+            action_ok = true;
+            move_cursor(c);
+        }
+
+        if (is_filling_action(c))
+        {
+            action_ok = true;
+            fill_number(c);
+        }
+
+        if (c == 'Q' || c == 'q')
+            break;
+
+        print_board();
+
+        if (check_win())
+        {
+            cout << "YOU WIN!" << endl;
+            break;
+        }
+
+        if (!action_ok&&c!='6')
+            cout << get_styled_text("!!! Invalid action !!!", "R");
+        if(c=='6')
+        cout<<" "<<endl<<"| 3  2 | 1  4 |"<<endl<<"| 1  4 | 3  2 |"<<endl<<"---------------"<<endl<<"| 4  3 | 2  1 |"<<endl<<"| 2  1 | 4  3 |";
+    }
+
+	return 0;
+}
